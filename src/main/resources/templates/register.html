@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Đăng ký - ComicVerse</title>
+</head>
+<body>
+<h2>Đăng ký tài khoản</h2>
+<form th:action="@{/register}" th:object="${user}" method="post">
+    <input type="text" th:field="*{username}" placeholder="Tên đăng nhập"><br>
+    <input type="email" th:field="*{email}" placeholder="Email"><br>
+    <input type="password" th:field="*{password}" placeholder="Mật khẩu"><br>
+    <button type="submit">Đăng ký</button>
+</form>
+<p><a th:href="@{/login}">Đã có tài khoản? Đăng nhập</a></p>
+</body>
+</html>

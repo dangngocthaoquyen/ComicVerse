@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Thông tin cá nhân - ComicVerse</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f8ff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .profile-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            padding: 40px;
+            width: 420px;
+            text-align: center;
+        }
+        img.avatar {
+            width: 120px; height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        input, button {
+            width: 90%;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+        button {
+            background: #007BFF;
+            color: white;
+            cursor: pointer;
+            border: none;
+        }
+        button:hover { background: #0056b3; }
+        .error { color: red; }
+        .success { color: green; }
+        a { text-decoration: none; color: #007BFF; }
+    </style>
+</head>
+<body>
+
+<div class="profile-container">
+    <h2>Thông tin cá nhân</h2>
+    <img th:src="${user.avatar != null ? user.avatar : '/images/default-avatar.png'}" class="avatar" alt="avatar">
+
+    <form th:action="@{/profile/avatar}" method="post" enctype="multipart/form-data">
+        <input type="file" name="avatarFile" accept="image/*" required>
+        <button type="submit">Đổi Avatar</button>
+    </form>
+
+    <p><strong>Tên đăng nhập:</strong> <span th:text="${user.username}"></span></p>
+
+    <form th:action="@{/profile/update}" method="post">
+        <label>Email:</label>
+        <input type="email" name="email" th:value="${user.email}" required>
+
+        <label>Mật khẩu hiện tại:</label>
+        <input type="password" name="currentPassword" placeholder="Nhập mật khẩu hiện tại" required>
+
+        <label>Mật khẩu mới (tùy chọn):</label>
+        <input type="password" name="newPassword" placeholder="Nhập mật khẩu mới">
+
+        <button type="submit">Lưu thay đổi</button>
+    </form>
+
+    <p class="success" th:text="${success}"></p>
+    <p class="error" th:text="${error}"></p>
+
+    <a th:href="@{/}">⬅ Quay lại trang chủ</a>
+</div>
+
+</body>
+</html>
