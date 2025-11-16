@@ -50,11 +50,10 @@ public class SecurityConfig {
             .formLogin(form -> form
                 .loginPage("/login")
                 .successHandler((request, response, authentication) -> {
-                    // ✅ Khi đăng nhập thành công
+
                     HttpSession session = request.getSession();
                     String username = authentication.getName();
 
-                    // Lấy user từ database
                     var userOpt = userRepository.findByUsername(username);
                     if (userOpt.isPresent()) {
                         var user = userOpt.get();
@@ -63,7 +62,7 @@ public class SecurityConfig {
                         System.out.println("✅ Đã lưu session username = " + user.getUsername());
                     }
 
-                    response.sendRedirect("/"); // chuyển về trang chủ
+                    response.sendRedirect("/");
                 })
                 .failureUrl("/login?error")
                 .permitAll()
