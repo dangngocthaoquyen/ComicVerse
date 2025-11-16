@@ -24,7 +24,9 @@ public class ProfileController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    // Hiển thị trang profile
+    private static final String UPLOAD_DIR = "D:/ComicVerseUploads/avatars/";
+
+    // Trang profile
     @GetMapping
     public String userProfile(HttpSession session, Model model) {
         String username = (String) session.getAttribute("username");
@@ -39,50 +41,62 @@ public class ProfileController {
     // Upload avatar
     @PostMapping("/avatar")
     public String updateAvatar(@RequestParam("avatarFile") MultipartFile file, HttpSession session) throws IOException {
+
         String username = (String) session.getAttribute("username");
         if (username == null) return "redirect:/login";
 
         Optional<User> userOpt = userRepository.findByUsername(username);
-        if (userOpt.isPresent() && !file.isEmpty()) {
-            String uploadDir = "uploads/avatars/";
-            new File(uploadDir).mkdirs();
-            String fileName = username + "_" + file.getOriginalFilename();
-            File dest = new File(uploadDir + fileName);
-            file.transferTo(dest);
 
+        if (userOpt.isPresent() && !file.isEmpty()) {
+
+            File folder = new File(UPLOAD_DIR);
+            if (!folder.exists()) folder.mkdirs();
+
+            String fileName = username + "_" + file.getOriginalFilename();
+            File destinationFile = new File(UPLOAD_DIR + fileName);
+
+            // Lưu avatar vào ổ cứng
+            file.transferTo(destinationFile);
+
+            // Lưu vào DB
             User user = userOpt.get();
-            user.setAvatar("/" + uploadDir + fileName);
+            user.setAvatar("/avatars/" + fileName);
             userRepository.save(user);
+
+            // Cập nhật session
             session.setAttribute("avatar", user.getAvatar());
         }
 
         return "redirect:/profile";
     }
 
-    // Cập nhật thông tin (email + mật khẩu)
+    // Update email + password
     @PostMapping("/update")
     public String updateProfile(@RequestParam("email") String email,
                                 @RequestParam("currentPassword") String currentPassword,
                                 @RequestParam(value = "newPassword", required = false) String newPassword,
                                 HttpSession session, Model model) {
+
         String username = (String) session.getAttribute("username");
         if (username == null) return "redirect:/login";
 
         Optional<User> userOpt = userRepository.findByUsername(username);
+
         if (userOpt.isPresent()) {
             User user = userOpt.get();
 
-            // Kiểm tra mật khẩu cũ
             if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
-                model.addAttribute("error", "Mật khẩu hiện tại không chính xác!");
+                model.addAttribute("error", "Mật khẩu cũ không đúng!");
                 model.addAttribute("user", user);
                 return "profile";
             }
 
             user.setEmail(email);
+
             if (newPassword != null && !newPassword.isEmpty()) {
                 user.setPassword(passwordEncoder.encode(newPassword));
             }
+
             userRepository.save(user);
             model.addAttribute("success", "Cập nhật thành công!");
             model.addAttribute("user", user);
