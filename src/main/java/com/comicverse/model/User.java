@@ -18,11 +18,9 @@ public class User {
     @Column(name = "avatar")
     private String avatar;
 
-    // Dùng Boolean (wrapper) để cho phép nhận null từ DB
     @Column(name = "can_upload")
     private Boolean canUpload = false;
 
-    // ===== GETTER & SETTER =====
     public Long getId() {
         return id;
     }
