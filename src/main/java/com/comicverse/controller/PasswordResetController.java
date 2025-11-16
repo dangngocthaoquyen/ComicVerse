@@ -24,13 +24,12 @@ public class PasswordResetController {
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private EmailService emailService;
 
-    // Form nhập email
+
     @GetMapping("/forgot-password")
     public String forgotPasswordPage() {
         return "forgot-password";
     }
 
-    // Xử lý gửi mail reset
     @PostMapping("/forgot-password")
     public String processForgotPassword(@RequestParam("email") String email, Model model) {
         Optional<User> userOpt = userRepository.findByEmail(email);
@@ -59,7 +58,6 @@ public class PasswordResetController {
         return "forgot-password";
     }
 
-    // Form nhập mật khẩu mới
     @GetMapping("/reset-password")
     public String resetPasswordForm(@RequestParam("token") String token, Model model) {
         Optional<PasswordResetToken> tokenOpt = tokenRepository.findByToken(token);
@@ -71,7 +69,6 @@ public class PasswordResetController {
         return "reset-password";
     }
 
-    // Xử lý đổi mật khẩu
     @PostMapping("/reset-password")
     public String processResetPassword(@RequestParam("token") String token,
                                        @RequestParam("password") String newPassword,
