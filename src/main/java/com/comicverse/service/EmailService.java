@@ -19,7 +19,7 @@ public class EmailService {
         helper.setTo(to);
         helper.setSubject(subject);
         helper.setText(text, false);
-        helper.setFrom("comicverseservice@gmail.com"); // ✅ phải có dòng này
+        helper.setFrom("comicverseservice@gmail.com");
         mailSender.send(message);
         System.out.println("✅ Mail sent successfully to: " + to);
     }
