@@ -26,7 +26,6 @@ public class ProfileController {
 
     private static final String UPLOAD_DIR = "D:/ComicVerseUploads/avatars/";
 
-    // Trang profile
     @GetMapping
     public String userProfile(HttpSession session, Model model) {
         String username = (String) session.getAttribute("username");
@@ -38,7 +37,6 @@ public class ProfileController {
         return "profile";
     }
 
-    // Upload avatar
     @PostMapping("/avatar")
     public String updateAvatar(@RequestParam("avatarFile") MultipartFile file, HttpSession session) throws IOException {
 
@@ -55,22 +53,18 @@ public class ProfileController {
             String fileName = username + "_" + file.getOriginalFilename();
             File destinationFile = new File(UPLOAD_DIR + fileName);
 
-            // Lưu avatar vào ổ cứng
             file.transferTo(destinationFile);
 
-            // Lưu vào DB
             User user = userOpt.get();
             user.setAvatar("/avatars/" + fileName);
             userRepository.save(user);
 
-            // Cập nhật session
             session.setAttribute("avatar", user.getAvatar());
         }
 
         return "redirect:/profile";
     }
 
-    // Update email + password
     @PostMapping("/update")
     public String updateProfile(@RequestParam("email") String email,
                                 @RequestParam("currentPassword") String currentPassword,
