@@ -11,19 +11,15 @@ public class PasswordResetToken {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Token đặt unique để không trùng lặp khi kiểm tra
     @Column(nullable = false, unique = true, length = 255)
     private String token;
 
-    // Email của người cần reset
     @Column(nullable = false, length = 255)
     private String email;
 
-    // Ngày hết hạn (15 phút sau khi tạo)
     @Column(name = "expiry_date", nullable = false)
     private LocalDateTime expiryDate;
 
-    // ===== Constructors =====
     public PasswordResetToken() {}
 
     public PasswordResetToken(String token, String email, LocalDateTime expiryDate) {
@@ -32,7 +28,6 @@ public class PasswordResetToken {
         this.expiryDate = expiryDate;
     }
 
-    // ===== Getter / Setter =====
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -45,7 +40,6 @@ public class PasswordResetToken {
     public LocalDateTime getExpiryDate() { return expiryDate; }
     public void setExpiryDate(LocalDateTime expiryDate) { this.expiryDate = expiryDate; }
 
-    // ===== toString() để debug =====
     @Override
     public String toString() {
         return "PasswordResetToken{" +
