@@ -2,9 +2,8 @@ package com.comicverse.config;
 
 import com.comicverse.repository.UserRepository;
 import com.comicverse.security.CustomUserDetailsService;
-
+import com.comicverse.service.OtpService;
 import jakarta.servlet.http.HttpSession;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,14 +16,14 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 public class SecurityConfig {
 
-    private final CustomUserDetailsService userDetailsService;
-    
     @Autowired
-    private UserRepository userRepository; 
+    private CustomUserDetailsService userDetailsService;
 
-    public SecurityConfig(CustomUserDetailsService userDetailsService) {
-        this.userDetailsService = userDetailsService;
-    }
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private OtpService otpService;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -33,48 +32,67 @@ public class SecurityConfig {
 
     @Bean
     public DaoAuthenticationProvider authProvider() {
-        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(userDetailsService);
-        authProvider.setPasswordEncoder(passwordEncoder());
-        return authProvider;
+        DaoAuthenticationProvider auth = new DaoAuthenticationProvider();
+        auth.setUserDetailsService(userDetailsService);
+        auth.setPasswordEncoder(passwordEncoder());
+        return auth;
     }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+
         http
+            .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/login", "/register", "/forgot-password", "/reset-password",
+                .requestMatchers("/", "/home", "/login", "/register",
+                        "/forgot-password", "/reset-password",
                         "/css/**", "/images/**", "/uploads/**").permitAll()
+                .requestMatchers("/admin/**").hasAuthority("ADMIN")
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form
                 .loginPage("/login")
+                .usernameParameter("email")
+                .passwordParameter("password")
                 .successHandler((request, response, authentication) -> {
 
                     HttpSession session = request.getSession();
-                    String username = authentication.getName();
+                    String email = authentication.getName();
 
-                    var userOpt = userRepository.findByUsername(username);
+                    var userOpt = userRepository.findByEmail(email);
                     if (userOpt.isPresent()) {
                         var user = userOpt.get();
-                        session.setAttribute("username", user.getUsername());
+
+                        session.setAttribute("user", user);
                         session.setAttribute("avatar", user.getAvatar());
-                        System.out.println("✅ Đã lưu session username = " + user.getUsername());
+
+                        // ⭐⭐ THÊM DÒNG NÀY — QUAN TRỌNG
+                        session.setAttribute("username", user.getUsername());
+                        // ---------------------------------
+
+                        // ADMIN → gửi OTP
+                        if ("ADMIN".equalsIgnoreCase(user.getRole())) {
+
+                            otpService.sendOtpToAdmin(email);
+                            session.setAttribute("pendingAdminEmail", email);
+
+                            response.sendRedirect("/admin/verify-otp");
+                            return;
+                        }
                     }
 
-                    response.sendRedirect("/");
+                    // USER → home
+                    response.sendRedirect("/home");
                 })
                 .failureUrl("/login?error")
                 .permitAll()
             )
             .logout(logout -> logout
-                .logoutSuccessUrl("/")
+                .logoutSuccessUrl("/login")
                 .permitAll()
             )
-            .authenticationProvider(authProvider())
-            .csrf(csrf -> csrf.disable());
+            .authenticationProvider(authProvider());
 
         return http.build();
     }
-
 }

@@ -2,6 +2,7 @@ package com.comicverse.controller;
 
 import com.comicverse.model.User;
 import com.comicverse.service.UserService;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -15,7 +16,7 @@ public class AuthController {
 
     @GetMapping("/login")
     public String loginPage() {
-        return "login";
+        return "login";  // chỉ hiển thị trang login
     }
 
     @GetMapping("/register")
@@ -29,5 +30,11 @@ public class AuthController {
         userService.register(user);
         model.addAttribute("success", "Đăng ký thành công! Mời đăng nhập.");
         return "login";
+    }
+
+    @GetMapping("/logout")
+    public String logout(HttpSession session) {
+        session.invalidate();
+        return "redirect:/login";
     }
 }

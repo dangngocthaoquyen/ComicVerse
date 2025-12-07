@@ -40,6 +40,19 @@
             color: white;
             cursor: pointer;
         }
+        .logout-btn {
+            display: block;
+            margin-top: 15px;
+            padding: 12px;
+            background: #dc3545;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        .logout-btn:hover {
+            background: #b02a37;
+        }
         .error { color: red; }
         .success { color: green; }
     </style>
@@ -78,7 +91,11 @@
     <p class="error" th:text="${error}"></p>
 
     <br>
-    <a th:href="@{/}">⬅ Trở về trang chủ</a>
+    <a th:href="@{/}" style="text-decoration:none;">⬅ Trở về trang chủ</a>
+
+    <!-- ⭐⭐ NÚT ĐĂNG XUẤT -->
+    <a th:href="@{/logout}" class="logout-btn">🚪 Đăng xuất</a>
+
 </div>
 
 </body>

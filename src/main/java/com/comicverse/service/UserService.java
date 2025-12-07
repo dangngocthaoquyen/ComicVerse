@@ -17,13 +17,15 @@ public class UserService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    // REGISTER
     public void register(User user) {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setRole("USER");
         userRepository.save(user);
     }
 
-    public Optional<User> findByUsername(String username) {
-        return userRepository.findByUsername(username);
+    // FIND BY EMAIL
+    public Optional<User> findByEmail(String email) {
+        return userRepository.findByEmail(email);
     }
 }

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Xác thực OTP</title>
+</head>
+
+<body>
+
+<h2>Nhập mã OTP đã gửi về email của bạn</h2>
+
+<form th:action="@{/admin/verify-otp}" method="post">
+    <input type="text" name="otp" placeholder="Nhập mã OTP" required>
+    <button type="submit">Xác nhận</button>
+</form>
+
+<p style="color:red" th:text="${error}"></p>
+
+</body>
+</html>

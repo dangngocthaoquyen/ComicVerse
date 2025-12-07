@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Hồ sơ Admin</title>
+
+    <style>
+        .profile-box {
+            margin: 40px auto;
+            width: 60%;
+            padding: 30px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        
+        .profile-title {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .item {
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .item strong {
+            width: 150px;
+            display: inline-block;
+        }
+    </style>
+</head>
+
+<body>
+<div class="profile-box">
+    <div class="profile-title">Thông tin Admin</div>
+
+    <div class="item"><strong>Tên:</strong> <span th:text="${admin.fullName}"></span></div>
+    <div class="item"><strong>Email:</strong> <span th:text="${admin.email}"></span></div>
+    <div class="item"><strong>Role:</strong> <span th:text="${admin.role}"></span></div>
+    <div class="item"><strong>Ngày tạo:</strong> 
+        <span th:text="${#dates.format(admin.createdAt,'dd-MM-yyyy')}"></span>
+    </div>
+</div>
+
+</body>
+</html>

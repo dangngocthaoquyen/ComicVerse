@@ -13,14 +13,29 @@ public class EmailService {
     @Autowired
     private JavaMailSender mailSender;
 
+    // Gửi text email
     public void sendEmail(String to, String subject, String text) throws MessagingException {
-        MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, "utf-8");
+        MimeMessage mail = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(mail, "utf-8");
+
         helper.setTo(to);
         helper.setSubject(subject);
         helper.setText(text, false);
         helper.setFrom("comicverseservice@gmail.com");
-        mailSender.send(message);
-        System.out.println("✅ Mail sent successfully to: " + to);
+
+        mailSender.send(mail);
+    }
+
+    // Gửi HTML email
+    public void sendHtmlEmail(String to, String subject, String html) throws MessagingException {
+        MimeMessage mail = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(mail, "utf-8");
+
+        helper.setTo(to);
+        helper.setSubject(subject);
+        helper.setText(html, true);
+        helper.setFrom("comicverseservice@gmail.com");
+
+        mailSender.send(mail);
     }
 }

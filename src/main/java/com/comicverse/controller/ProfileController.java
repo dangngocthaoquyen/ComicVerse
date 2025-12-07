@@ -1,5 +1,7 @@
 package com.comicverse.controller;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import com.comicverse.model.User;
 import com.comicverse.repository.UserRepository;
 import jakarta.servlet.http.HttpSession;
@@ -10,8 +12,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
+import java.util.Map;
 import java.util.Optional;
 
 @Controller
@@ -24,7 +26,8 @@ public class ProfileController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    private static final String UPLOAD_DIR = "D:/ComicVerseUploads/avatars/";
+    @Autowired
+    private Cloudinary cloudinary;
 
     @GetMapping
     public String userProfile(HttpSession session, Model model) {
@@ -38,7 +41,8 @@ public class ProfileController {
     }
 
     @PostMapping("/avatar")
-    public String updateAvatar(@RequestParam("avatarFile") MultipartFile file, HttpSession session) throws IOException {
+    public String updateAvatar(@RequestParam("avatarFile") MultipartFile file,
+                               HttpSession session) throws IOException {
 
         String username = (String) session.getAttribute("username");
         if (username == null) return "redirect:/login";
@@ -47,23 +51,28 @@ public class ProfileController {
 
         if (userOpt.isPresent() && !file.isEmpty()) {
 
-            File folder = new File(UPLOAD_DIR);
-            if (!folder.exists()) folder.mkdirs();
+            // Upload lên Cloudinary
+            Map uploadResult = cloudinary.uploader().upload(
+                    file.getBytes(),
+                    ObjectUtils.asMap(
+                            "folder", "comicverse/avatars",
+                            "public_id", username + "_avatar",
+                            "overwrite", true
+                    )
+            );
 
-            String fileName = username + "_" + file.getOriginalFilename();
-            File destinationFile = new File(UPLOAD_DIR + fileName);
-
-            file.transferTo(destinationFile);
+            String imageUrl = uploadResult.get("secure_url").toString();
 
             User user = userOpt.get();
-            user.setAvatar("/avatars/" + fileName);
+            user.setAvatar(imageUrl);
             userRepository.save(user);
 
-            session.setAttribute("avatar", user.getAvatar());
+            session.setAttribute("avatar", imageUrl);
         }
 
         return "redirect:/profile";
     }
+
 
     @PostMapping("/update")
     public String updateProfile(@RequestParam("email") String email,

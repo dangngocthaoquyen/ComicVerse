@@ -12,11 +12,13 @@ public class HomeController {
     @Autowired
     private EmailService emailService;
 
-    // Trang chủ ComicVerse
     @GetMapping("/")
-    public String home() {
-        return "index";
+    public String homeRoot() {
+        return "home"; 
     }
 
-    
+    @GetMapping("/home")
+    public String home() {
+        return "home";
+    }
 }
