@@ -2,8 +2,6 @@ package com.comicverse.service;
 
 import com.comicverse.model.AdminOtp;
 import com.comicverse.repository.AdminOtpRepository;
-import jakarta.mail.MessagingException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -13,13 +11,14 @@ import java.util.Random;
 @Service
 public class OtpService {
 
-    @Autowired
-    private AdminOtpRepository otpRepository;
+    private final AdminOtpRepository otpRepository;
+    private final EmailService emailService;
 
-    @Autowired
-    private EmailService emailService;
+    public OtpService(AdminOtpRepository otpRepository, EmailService emailService) {
+        this.otpRepository = otpRepository;
+        this.emailService = emailService;
+    }
 
-    // Gửi OTP admin
     public void sendOtpToAdmin(String email) {
 
         String otp = String.valueOf(100000 + new Random().nextInt(900000));
@@ -31,26 +30,24 @@ public class OtpService {
 
         otpRepository.save(adminOtp);
 
-        try {
-            emailService.sendHtmlEmail(
-                    email,
-                    "Mã OTP đăng nhập quản trị",
-                    "<h2>Mã OTP của bạn: <b>" + otp + "</b></h2>" +
-                    "<p>Mã có hiệu lực trong 3 phút.</p>"
-            );
-        } catch (MessagingException e) {
-            e.printStackTrace();
-            System.out.println("❌ Lỗi gửi email OTP!");
-        }
+        // log để chắc chắn chạy tới đây
+        System.out.println("OTP created for " + email + " = " + otp);
+
+        // gửi mail (nếu fail, nó sẽ ném exception để bạn thấy lỗi)
+        emailService.sendHtmlEmail(
+                email,
+                "Mã OTP đăng nhập quản trị",
+                "<h2>Mã OTP của bạn: <b>" + otp + "</b></h2>" +
+                "<p>Mã có hiệu lực trong 3 phút.</p>"
+        );
     }
 
-    // Kiểm tra OTP
     public boolean verifyOtp(String email, String otp) {
 
         List<AdminOtp> list = otpRepository.findByEmail(email);
         if (list.isEmpty()) return false;
 
-        AdminOtp stored = list.get(list.size() - 1); // lấy bản ghi mới nhất
+        AdminOtp stored = list.get(list.size() - 1);
 
         if (!stored.getOtp().equals(otp)) return false;
         if (stored.getExpiry().isBefore(LocalDateTime.now())) return false;

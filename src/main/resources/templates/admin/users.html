@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Quản lý người dùng</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+
+<div class="p-6 max-w-6xl mx-auto">
+    <h1 class="text-2xl font-semibold mb-6">Quản lý người dùng</h1>
+
+    <table class="w-full bg-white border rounded-lg">
+        <thead class="bg-gray-100">
+        <tr>
+            <th class="p-3">ID</th>
+            <th class="p-3">Username</th>
+            <th class="p-3">Email</th>
+            <th class="p-3">Trạng thái</th>
+            <th class="p-3">Upload</th>
+            <th class="p-3">Thao tác</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        <tr th:each="u : ${users}" class="border-t">
+            <td class="p-3" th:text="${u.id}"></td>
+            <td class="p-3" th:text="${u.username}"></td>
+            <td class="p-3" th:text="${u.email}"></td>
+
+            <!-- STATUS -->
+            <td class="p-3">
+                <span th:if="${u.status == 'ACTIVE'}"
+                      class="text-green-600">Hoạt động</span>
+                <span th:if="${u.status == 'LOCKED'}"
+                      class="text-red-600">Đã khóa</span>
+            </td>
+
+            <!-- CAN UPLOAD -->
+            <td class="p-3">
+                <span th:if="${u.canUpload}" class="text-blue-600">Uploader</span>
+                <span th:unless="${u.canUpload}" class="text-gray-500">Không</span>
+            </td>
+
+            <!-- ACTIONS -->
+            <td class="p-3 space-x-2">
+
+                <form th:if="${u.status == 'ACTIVE'}"
+                      th:action="@{/admin/users/{id}/lock(id=${u.id})}"
+                      method="post" class="inline">
+                    <button class="text-red-600">Khóa</button>
+                </form>
+
+                <form th:if="${u.status == 'LOCKED'}"
+                      th:action="@{/admin/users/{id}/unlock(id=${u.id})}"
+                      method="post" class="inline">
+                    <button class="text-green-600">Mở</button>
+                </form>
+
+                <form th:action="@{/admin/users/{id}/toggle-upload(id=${u.id})}"
+                      method="post" class="inline">
+                    <button class="text-blue-600">Toggle Upload</button>
+                </form>
+
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+</body>
+</html>

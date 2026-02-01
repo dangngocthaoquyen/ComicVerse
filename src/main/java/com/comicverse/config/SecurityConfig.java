@@ -44,18 +44,22 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/home", "/login", "/register",
-                        "/forgot-password", "/reset-password",
-                        "/css/**", "/images/**", "/uploads/**").permitAll()
+                .requestMatchers(
+                    "/", "/home", "/login", "/register",
+                    "/forgot-password", "/reset-password",
+                    "/css/**", "/images/**", "/uploads/**"
+                ).permitAll()
                 .requestMatchers("/admin/**").hasAuthority("ADMIN")
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form
                 .loginPage("/login")
+                .loginProcessingUrl("/login") // action form = /login
                 .usernameParameter("email")
                 .passwordParameter("password")
-                .successHandler((request, response, authentication) -> {
 
+                // ✅ thành công -> set session + OTP nếu ADMIN
+                .successHandler((request, response, authentication) -> {
                     HttpSession session = request.getSession();
                     String email = authentication.getName();
 
@@ -65,30 +69,42 @@ public class SecurityConfig {
 
                         session.setAttribute("user", user);
                         session.setAttribute("avatar", user.getAvatar());
-
-                        // ⭐⭐ THÊM DÒNG NÀY — QUAN TRỌNG
                         session.setAttribute("username", user.getUsername());
-                        // ---------------------------------
 
-                        // ADMIN → gửi OTP
                         if ("ADMIN".equalsIgnoreCase(user.getRole())) {
-
                             otpService.sendOtpToAdmin(email);
                             session.setAttribute("pendingAdminEmail", email);
-
                             response.sendRedirect("/admin/verify-otp");
                             return;
                         }
                     }
 
-                    // USER → home
                     response.sendRedirect("/home");
                 })
-                .failureUrl("/login?error")
+
+                // ✅ thất bại -> set message vào session rồi redirect về /login
+                .failureHandler((request, response, exception) -> {
+
+                    String msg = "Email hoặc mật khẩu không đúng!";
+
+                    // Khi user status = LOCKED và bạn đã set isAccountNonLocked() = false
+                    // => exception sẽ là LockedException
+                    if (exception instanceof org.springframework.security.authentication.LockedException) {
+                        msg = "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ admin.";
+                    }
+
+                    request.getSession().setAttribute("loginError", msg);
+                    response.sendRedirect("/login?error");
+                })
+
                 .permitAll()
             )
             .logout(logout -> logout
+                .logoutUrl("/logout")            // POST /logout (Spring mặc định)
                 .logoutSuccessUrl("/login")
+                .invalidateHttpSession(true)
+                .clearAuthentication(true)
+                .deleteCookies("JSESSIONID")
                 .permitAll()
             )
             .authenticationProvider(authProvider());

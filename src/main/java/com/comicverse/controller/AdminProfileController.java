@@ -9,76 +9,56 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
 
 import java.io.File;
 import java.io.IOException;
 
 @Controller
-@RequestMapping("/admin")
+@RequestMapping("/admin/profile")
 public class AdminProfileController {
 
-    @Autowired
-    private UserRepository userRepository;
+    @Autowired private UserRepository userRepository;
+    @Autowired private PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    // 📌 Hiển thị trang profile
-    @GetMapping("/profile")
-    public String profilePage(HttpSession session, Model model) {
-
-        User admin = (User) session.getAttribute("user");
-
-        if (admin == null || !"ADMIN".equalsIgnoreCase(admin.getRole())) {
-            return "redirect:/login";
-        }
-
-        model.addAttribute("admin", admin);
-        return "admin/admin-profile";
+    private boolean checkOtp(HttpSession session) {
+        Boolean verified = (Boolean) session.getAttribute("adminVerified");
+        return verified != null && verified;
     }
 
-    // 📌 Đổi avatar
-    @PostMapping("/profile/avatar")
-    public String updateAvatar(
-            @RequestParam("avatarFile") MultipartFile file,
-            HttpSession session
-    ) throws IOException {
+    private User getCurrentAdmin(HttpSession session) {
+        return (User) session.getAttribute("user"); // ✅ bạn đang lưu "user"
+    }
 
-        User admin = (User) session.getAttribute("user");
+    @GetMapping
+    public String profilePage(HttpSession session, Model model) {
+        if (!checkOtp(session)) return "redirect:/admin/verify-otp";
 
+        User admin = getCurrentAdmin(session);
         if (admin == null) return "redirect:/login";
 
-        if (!file.isEmpty()) {
-            String uploadDir = "uploads/";
-
-            File dest = new File(uploadDir + file.getOriginalFilename());
-            file.transferTo(dest);
-
-            admin.setAvatar("/uploads/" + file.getOriginalFilename());
-            userRepository.save(admin);
-
-            session.setAttribute("user", admin);
-        }
-
-        return "redirect:/admin/profile";
+        model.addAttribute("admin", admin);
+        return "admin/admin-profile"; // file html mới
     }
 
-    // 📌 Update email + password
-    @PostMapping("/profile/update")
+    @PostMapping("/update")
     public String updateProfile(
-            @RequestParam("email") String email,
-            @RequestParam("currentPassword") String currentPassword,
-            @RequestParam(value = "newPassword", required = false) String newPassword,
             HttpSession session,
-            Model model
+            @RequestParam String email,
+            @RequestParam String currentPassword,
+            @RequestParam(required = false) String newPassword,
+            RedirectAttributes ra
     ) {
+        if (!checkOtp(session)) return "redirect:/admin/verify-otp";
 
-        User admin = (User) session.getAttribute("user");
+        User admin = getCurrentAdmin(session);
+        if (admin == null) return "redirect:/login";
 
+        // check password hiện tại
         if (!passwordEncoder.matches(currentPassword, admin.getPassword())) {
-            model.addAttribute("error", "Mật khẩu hiện tại không đúng!");
-            model.addAttribute("admin", admin);
-            return "admin/admin-profile";
+            ra.addFlashAttribute("error", "Mật khẩu hiện tại không đúng!");
+            return "redirect:/admin/profile";
         }
 
         admin.setEmail(email);
@@ -88,11 +68,55 @@ public class AdminProfileController {
         }
 
         userRepository.save(admin);
+
+        // cập nhật session (nếu bạn hiển thị avatar/username từ session)
         session.setAttribute("user", admin);
+        session.setAttribute("username", admin.getUsername());
+        session.setAttribute("avatar", admin.getAvatar());
 
-        model.addAttribute("success", "Cập nhật thành công!");
-        model.addAttribute("admin", admin);
-
-        return "admin/admin-profile";
+        ra.addFlashAttribute("success", "Cập nhật thành công!");
+        return "redirect:/admin/profile";
     }
+
+    @PostMapping("/avatar")
+    public String updateAvatar(HttpSession session,
+                               @RequestParam("avatarFile") MultipartFile file,
+                               RedirectAttributes ra) {
+        if (!checkOtp(session)) return "redirect:/admin/verify-otp";
+
+        User admin = getCurrentAdmin(session);
+        if (admin == null) return "redirect:/login";
+
+        if (file.isEmpty()) {
+            ra.addFlashAttribute("error", "Vui lòng chọn ảnh.");
+            return "redirect:/admin/profile";
+        }
+
+        try {
+            String uploadDir = "D:/ComicVerseUploads/avatars/";
+            File dir = new File(uploadDir);
+            if (!dir.exists()) dir.mkdirs();
+
+            String original = file.getOriginalFilename() == null ? "avatar.jpg" : file.getOriginalFilename();
+            String safe = original.replaceAll("[^a-zA-Z0-9._-]", "_");
+            String filename = System.currentTimeMillis() + "_" + safe;
+
+            File dest = new File(dir, filename);
+            file.transferTo(dest);
+
+            // ✅ QUAN TRỌNG: URL phải khớp với WebConfig (/avatars/**)
+            String avatarUrl = "/avatars/" + filename;
+
+            admin.setAvatar(avatarUrl);
+            userRepository.save(admin);
+
+            session.setAttribute("avatar", avatarUrl);
+            ra.addFlashAttribute("success", "Đổi avatar thành công!");
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", "Upload thất bại: " + e.getMessage());
+        }
+
+        return "redirect:/admin/profile";
+    }
+
 }

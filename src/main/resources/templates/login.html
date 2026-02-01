@@ -1,25 +1,29 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <title>Đăng nhập</title>
+  <meta charset="UTF-8">
+  <title>Đăng nhập</title>
 </head>
 <body>
 
 <h2>Đăng nhập</h2>
 
+<!-- Lỗi custom (ví dụ: tài khoản bị khóa) -->
+<p th:if="${loginError}" style="color:red" th:text="${loginError}"></p>
+
+<!-- fallback lỗi sai email/mật khẩu từ Spring Security -->
+<p th:if="${param.error} and ${loginError} == null" style="color:red">
+  Sai email hoặc mật khẩu!
+</p>
+
 <form th:action="@{/login}" method="post">
+  <input type="email" name="email" placeholder="Email" required>
+  <br><br>
 
-    <input type="email" name="email" placeholder="Email" required>
-    <br><br>
+  <input type="password" name="password" placeholder="Mật khẩu" required>
+  <br><br>
 
-    <input type="password" name="password" placeholder="Mật khẩu" required>
-    <br><br>
-
-    <button type="submit">Đăng nhập</button>
-
-    <p th:if="${param.error}" style="color:red">Sai email hoặc mật khẩu!</p>
-
+  <button type="submit">Đăng nhập</button>
 </form>
 
 </body>

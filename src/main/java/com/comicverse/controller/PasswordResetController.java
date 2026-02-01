@@ -31,7 +31,7 @@ public class PasswordResetController {
     }
 
     @PostMapping("/forgot-password")
-    public String processForgotPassword(@RequestParam("email") String email, Model model) {
+    public String processForgotPassword(@RequestParam("email") String email, Model model) throws MessagingException {
         Optional<User> userOpt = userRepository.findByEmail(email);
         if (userOpt.isEmpty()) {
             model.addAttribute("error", "Không tìm thấy email này trong hệ thống.");
@@ -46,14 +46,10 @@ public class PasswordResetController {
         tokenRepository.save(resetToken);
 
         String resetLink = "http://localhost:8080/reset-password?token=" + token;
-        try {
-            emailService.sendEmail(email, "Đặt lại mật khẩu ComicVerse 🔐",
-                    "Xin chào,\n\nVui lòng nhấn vào liên kết dưới đây để đặt lại mật khẩu:\n"
-                    + resetLink + "\n\nLiên kết sẽ hết hạn sau 15 phút.");
-            model.addAttribute("message", "Đã gửi liên kết đặt lại mật khẩu qua email!");
-        } catch (MessagingException e) {
-            model.addAttribute("error", "Không thể gửi email: " + e.getMessage());
-        }
+        emailService.sendEmail(email, "Đặt lại mật khẩu ComicVerse 🔐",
+		        "Xin chào,\n\nVui lòng nhấn vào liên kết dưới đây để đặt lại mật khẩu:\n"
+		        + resetLink + "\n\nLiên kết sẽ hết hạn sau 15 phút.");
+		model.addAttribute("message", "Đã gửi liên kết đặt lại mật khẩu qua email!");
 
         return "forgot-password";
     }

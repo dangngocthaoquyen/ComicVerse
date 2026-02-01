@@ -51,14 +51,21 @@
 <div class="sidebar">
     <h2>ADMIN</h2>
 
-    <a href="#">Dashboard</a>
+    <!-- Dashboard -->
+    <a th:href="@{/admin/dashboard}">Dashboard</a>
+
+    <!-- 👉 THÊM LINK PROFILE ADMIN -->
+    <a th:href="@{/admin/profile}">Hồ sơ Admin</a>
+
+    <!-- Các mục khác (để sau làm backend) -->
     <a href="#">Quản lý truyện</a>
-    <a href="#">Quản lý người dùng</a>
+    <a th:href="@{/admin/users}" class="...">Quản lý người dùng</a>
     <a href="#">Thống kê</a>
 
-    <!-- Logout chuẩn Thymeleaf -->
+    <!-- Logout -->
     <a th:href="@{/logout}" style="color: #ffcccc;">Đăng xuất</a>
 </div>
+
 
 <!-- Main Content -->
 <div class="main">

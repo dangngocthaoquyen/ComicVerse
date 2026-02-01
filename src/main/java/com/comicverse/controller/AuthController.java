@@ -15,8 +15,16 @@ public class AuthController {
     private UserService userService;
 
     @GetMapping("/login")
-    public String loginPage() {
-        return "login";  // chỉ hiển thị trang login
+    public String loginPage(Model model, HttpSession session) {
+
+        // ✅ Lấy message từ session (do failureHandler set)
+        Object msg = session.getAttribute("loginError");
+        if (msg != null) {
+            model.addAttribute("loginError", msg.toString());
+            session.removeAttribute("loginError"); // ✅ remove ở controller (an toàn)
+        }
+
+        return "login";
     }
 
     @GetMapping("/register")
@@ -26,15 +34,10 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public String registerSubmit(@ModelAttribute User user, Model model) {
+    public String registerSubmit(@ModelAttribute User user) {
         userService.register(user);
-        model.addAttribute("success", "Đăng ký thành công! Mời đăng nhập.");
-        return "login";
-    }
-
-    @GetMapping("/logout")
-    public String logout(HttpSession session) {
-        session.invalidate();
         return "redirect:/login";
     }
+
+    // ❌ KHÔNG làm /logout ở controller nữa (Spring Security xử lý)
 }

@@ -1,20 +1,106 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Xác thực OTP</title>
+    <title>Hồ sơ Admin</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f8ff;
+        }
+        .profile-box {
+            margin: 40px auto;
+            width: 420px;
+            padding: 30px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        img.avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 10px;
+        }
+        input, button {
+            width: 90%;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 8px;
+        }
+        button {
+            border: none;
+            background: #007BFF;
+            color: white;
+            cursor: pointer;
+        }
+        .logout-btn {
+            margin-top: 10px;
+            background: #dc3545;
+        }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
 </head>
 
 <body>
 
-<h2>Nhập mã OTP đã gửi vào email</h2>
+<div class="profile-box">
 
-<form th:action="@{/admin/verify-otp}" method="post">
-    <input type="text" name="otp" placeholder="Nhập mã OTP" required>
-    <button type="submit">Xác nhận</button>
-</form>
+    <h2>Hồ sơ Admin</h2>
 
-<p style="color:red" th:text="${error}"></p>
+    <!-- ✅ thêm id để JS preview thay src -->
+    <img id="avatarPreview" class="avatar"
+         th:src="${admin.avatar != null ? admin.avatar + '?v=' + #dates.createNow().time : '/images/default-avatar.png'}"
+         alt="Avatar">
+
+    <!-- ĐỔI AVATAR -->
+    <form th:action="@{/admin/profile/avatar}" method="post" enctype="multipart/form-data">
+        
+
+        <!-- ✅ thêm onchange để preview chạy -->
+        <input type="file" name="avatarFile" accept="image/*" required onchange="previewAvatar(event)">
+        <button type="submit">Đổi Avatar</button>
+    </form>
+
+    <p><strong>Username:</strong> <span th:text="${admin.username}"></span></p>
+    <p><strong>Role:</strong> <span th:text="${admin.role}"></span></p>
+
+    <!-- CẬP NHẬT EMAIL + PASSWORD -->
+    <form th:action="@{/admin/profile/update}" method="post">
+        
+
+        <label>Email</label>
+        <input type="email" name="email" th:value="${admin.email}" required>
+
+        <label>Mật khẩu hiện tại</label>
+        <input type="password" name="currentPassword" required>
+
+        <label>Mật khẩu mới (tùy chọn)</label>
+        <input type="password" name="newPassword">
+
+        <button type="submit">Lưu thay đổi</button>
+    </form>
+
+    <p class="success" th:text="${success}"></p>
+    <p class="error" th:text="${error}"></p>
+
+    <a th:href="@{/admin/dashboard}">⬅ Quay về Dashboard</a><br>
+    <a th:href="@{/logout}" class="logout-btn">🚪 Đăng xuất</a>
+
+</div>
+
+<script>
+  function previewAvatar(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const img = document.getElementById('avatarPreview');
+    img.src = URL.createObjectURL(file);
+  }
+</script>
 
 </body>
 </html>
