@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý truyện - ComicVerse</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #ff4757;
+            --dark: #2f3542;
+            --gray: #747d8c;
+            --bg: #f4f6f9;
+            --white: #ffffff;
+            --radius: 12px;
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            padding: 30px;
+            color: var(--dark);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* HEADER */
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            background: var(--white);
+            padding: 20px 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.03);
+        }
+        
+        .header-title h2 { margin: 0; font-size: 1.5rem; }
+        .header-title p { margin: 5px 0 0; color: var(--gray); font-size: 0.9rem; }
+
+        .btn-back {
+            text-decoration: none;
+            color: var(--dark);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.3s;
+        }
+        .btn-back:hover { color: var(--primary); }
+
+        .studio-badge {
+            background: linear-gradient(135deg, #ff4757, #ff6b81);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 800;
+            display: flex; align-items: center; gap: 5px;
+        }
+
+        /* GRID LAYOUT */
+        .manage-grid {
+            display: grid;
+            /* Tự động chia cột, tối thiểu 220px mỗi thẻ */
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 30px;
+        }
+
+        /* CARD STYLE (Cấu trúc thẻ) */
+        .comic-card {
+            background: transparent;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            position: relative;
+        }
+
+        .cover-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 2/3; /* ✅ CŨ: 3/4 -> MỚI: 2/3 (Dáng dài chuẩn truyện) */
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .cover-wrapper:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(255, 71, 87, 0.2);
+        }
+
+        .comic-cover {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+        .cover-wrapper:hover .comic-cover {
+            transform: scale(1.05); /* Zoom nhẹ khi hover */
+        }
+
+        /* Status Badge đè lên ảnh */
+        .status-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            z-index: 2;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .st-ongoing { background: #2ed573; color: white; }
+        .st-completed { background: #3742fa; color: white; }
+
+        /* Overlay khi hover (Tùy chọn, để làm tối ảnh) */
+        .hover-overlay {
+            position: absolute; inset: 0;
+            background: rgba(0,0,0,0.1);
+            opacity: 0;
+            transition: 0.3s;
+        }
+        .cover-wrapper:hover .hover-overlay { opacity: 1; }
+
+        /* 2. INFO & ACTIONS */
+        .comic-info {
+            padding: 0 5px;
+        }
+        
+        .comic-title {
+            margin: 0 0 8px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--dark);
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; /* Cắt chữ nếu quá dài */
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .btn-act {
+            text-align: center;
+            padding: 8px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-decoration: none;
+            transition: 0.2s;
+            display: flex; justify-content: center; align-items: center; gap: 6px;
+        }
+
+        .btn-edit { background: #ffffff; border: 1px solid #dfe4ea; color: var(--dark); }
+        .btn-edit:hover { border-color: var(--dark); background: #2f3542; color: white; }
+
+        .btn-upload { background: rgba(255, 71, 87, 0.1); color: var(--primary); border: 1px solid transparent; }
+        .btn-upload:hover { background: var(--primary); color: white; }
+
+        /* 3. CARD "ADD NEW" */
+        /* 3. CARD "ADD NEW" (Cũng sửa theo) */
+        .add-card {
+            border: 2px dashed #cbd5e0;
+            border-radius: var(--radius);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            color: #94a3b8;
+            transition: 0.3s;
+            aspect-ratio: 2/3; /* ✅ CŨ: 3/4 -> MỚI: 2/3 */
+            background: #fff;
+        }
+        .add-card:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: #fff5f6;
+            transform: translateY(-5px);
+        }
+        .add-card i { font-size: 3rem; margin-bottom: 15px; }
+        .add-card span { font-weight: 700; font-size: 1.1rem; }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    
+    <div class="dashboard-header">
+        <div class="header-title">
+            <a th:href="@{/home}" class="btn-back"><i class="fas fa-chevron-left"></i> Trang chủ</a>
+            <div style="margin-top: 15px; display: flex; align-items: center; gap: 15px;">
+                <img th:src="${session.avatar != null ? session.avatar : '/images/default-avatar.png'}" 
+                     style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #dfe4ea;">
+                <div>
+                    <h2>Studio Sáng Tạo</h2>
+                    <p>Bạn đang quản lý <strong th:text="${myComics.size()}" style="color: var(--primary);">0</strong> tác phẩm</p>
+                </div>
+            </div>
+        </div>
+        <div class="studio-badge"><i class="fas fa-pen-nib"></i> CREATOR MODE</div>
+    </div>
+
+    <div class="manage-grid">
+
+        <a th:href="@{/comic/create}" class="add-card">
+            <i class="fas fa-plus-circle"></i>
+            <span>Đăng Truyện Mới</span>
+        </a>
+
+        <div class="comic-card" th:each="comic : ${myComics}">
+            
+            <div class="cover-wrapper">
+                <span class="status-badge" 
+                      th:classappend="${comic.status.name() == 'COMPLETED' ? 'st-completed' : 'st-ongoing'}"
+                      th:text="${comic.status}">
+                </span>
+                
+                <img th:src="${comic.coverImage}" class="comic-cover" alt="Cover">
+                
+                <a th:href="@{'/truyen/' + ${comic.slug}}" class="hover-overlay"></a>
+            </div>
+
+            <div class="comic-info">
+                <h3 class="comic-title" th:text="${comic.title}" th:title="${comic.title}">Tên truyện</h3>
+                
+                <div class="action-buttons">
+                    <a th:href="@{'/comic/edit/' + ${comic.id}}" class="btn-act btn-edit">
+                        <i class="fas fa-cog"></i> Sửa
+                    </a>
+                    <a th:href="@{'/comic/' + ${comic.id} + '/upload-chapter'}" class="btn-act btn-upload">
+                        <i class="fas fa-upload"></i> Up Chap
+                    </a>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+</body>
+</html>

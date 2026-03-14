@@ -1,166 +1,125 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head th:replace="~{fragments/layout :: head(title=${pageTitle})}">
+</head>
 <head>
-    <meta charset="UTF-8">
-    <title>ComicVerse - Trang chủ</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
     <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background-color: #f8f9fc;
-        }
-
-        header {
-            background-color: #222;
+        /* Badge trạng thái trên bìa truyện */
+        .status-badge {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 0.65rem; /* Bé hơn xíu so với trang quản lý vì card trang chủ nhỏ hơn */
+            font-weight: 800;
+            text-transform: uppercase;
+            z-index: 2;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
             color: white;
-            padding: 15px 40px;
         }
-
-        .nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            font-size: 1.8rem;
-            color: #00BFFF;
-            margin: 0;
-        }
-
-        nav a {
-            color: white;
-            margin: 0 12px;
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-        nav a:hover {
-            text-decoration: underline;
-        }
-
-        .user-actions {
-            color: white;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            object-fit: cover;
-            cursor: pointer;
-            border: 2px solid #fff;
-        }
-
-        .profile-btn {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: white;
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-        .profile-btn:hover {
-            color: #00BFFF;
-        }
-
-        main {
-            padding: 40px;
-        }
-
-        .comic-section {
-            text-align: center;
-        }
-
-        .comic-grid {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 20px;
-            margin-top: 20px;
-        }
-
-        .comic-card {
-            background: white;
-            border-radius: 10px;
-            padding: 10px;
-            width: 150px;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-            transition: transform 0.2s;
-        }
-
-        .comic-card:hover {
-            transform: scale(1.05);
-        }
-
-        footer {
-            background-color: #222;
-            color: white;
-            text-align: center;
-            padding: 10px;
-        }
+        .st-ongoing { background: #2ed573; }   /* Xanh lá */
+        .st-completed { background: #3742fa; } /* Xanh dương */
+        .st-dropped { background: #ff4757; }   /* Đỏ */
     </style>
 </head>
 
 <body>
-<header>
-    <div class="nav">
-        <h1 class="logo">ComicVerse</h1>
+    <div th:replace="~{fragments/layout :: header}"></div>
 
-        <nav>
-            <a th:href="@{/}">Trang chủ</a>
-            <a href="#">Thể loại</a>
-            <a href="#">Xếp hạng</a>
-            <a href="#">Theo dõi</a>
-            <a href="#">Liên hệ</a>
-        </nav>
+    <div class="container comic-section" style="display: flex; max-width: 1200px; margin: 30px auto; gap: 30px; padding: 0 20px;">
+        
+        <aside class="sidebar" style="width: 250px; flex-shrink: 0;">
+            <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+                <h3 style="margin-top: 0; color: var(--dark); border-bottom: 2px solid #f1f2f6; padding-bottom: 10px;">
+                    <i class="fas fa-list"></i> Thể loại
+                </h3>
+                <div class="category-list" style="display: flex; flex-direction: column; gap: 10px;">
+                    <a th:href="@{/home}" style="text-decoration: none; color: #747d8c; font-weight: 600;">Tất cả</a>
+                    <div th:each="cat : ${categories}">
+                        <a th:href="@{'/category/' + ${cat.slug}}" th:text="${cat.name}" 
+                           style="text-decoration: none; color: #747d8c; font-weight: 600; transition: 0.3s;"
+                           onmouseover="this.style.color='#ff4757'" 
+                           onmouseout="this.style.color='#747d8c'">
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </aside>
 
-        <!-- ✅ Phần người dùng -->
-        <div class="user-actions">
-            <!-- Khi user đã đăng nhập -->
-            <div th:if="${session.username != null}">
-                <a th:href="@{/profile}" class="profile-btn">
-                    <img th:src="${session.avatar != null ? session.avatar : '/images/default-avatar.png'}" alt="avatar" class="avatar">
-                    <span th:text="${session.username}">User</span>
-                </a>
+        <main style="flex: 1;">
+            
+            <div class="hero-banner" style="background: linear-gradient(135deg, #ff9ff3 0%, #feca57 100%); padding: 40px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; color: white; margin-bottom: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
+                <div class="hero-text">
+                    <h1 style="margin: 0 0 10px 0; font-size: 2rem;">Thế giới truyện tranh bất tận</h1>
+                    <p style="margin: 0; font-size: 1.1rem; opacity: 0.9;">Khám phá hàng ngàn bộ truyện hấp dẫn, cập nhật liên tục.</p>
+                </div>
+                <img src="https://cdni.iconscout.com/illustration/premium/thumb/man-reading-book-2537675-2130386.png" 
+                     alt="Hero" style="height: 150px; display: none; @media(min-width: 768px){display: block;}">
             </div>
 
-            <!-- Khi user chưa đăng nhập -->
-            <div th:if="${session.username == null}">
-                <a th:href="@{/login}">Đăng nhập</a> /
-                <a th:href="@{/register}">Đăng ký</a>
+            <div class="filter-bar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="font-size: 1.5rem; margin: 0; color: var(--dark);" th:switch="${currentSort}">
+                    <span th:case="'view'"><i class="fas fa-fire" style="color: #ff4757;"></i> Xem nhiều nhất</span>
+                    <span th:case="'rating'"><i class="fas fa-star" style="color: #f1c40f;"></i> Đánh giá cao</span>
+                    <span th:case="*"><i class="fas fa-clock" style="color: #3498db;"></i> Mới cập nhật</span>
+                </h2>
+
+                <div class="filter-dropdown" style="position: relative;">
+                    <select onchange="location = this.value;" 
+                            style="padding: 8px 35px 8px 15px; border-radius: 20px; border: 1px solid #dfe4ea; background: white; cursor: pointer; outline: none; font-family: inherit; font-weight: bold; color: #57606f; -webkit-appearance: none; appearance: none;">
+                        <option th:value="@{${baseUrl}(keyword=${currentKeyword}, sort='latest')}" th:selected="${currentSort == 'latest'}">✨ Mới cập nhật</option>
+                        <option th:value="@{${baseUrl}(keyword=${currentKeyword}, sort='view')}" th:selected="${currentSort == 'view'}">🔥 Xem nhiều nhất</option>
+                        <option th:value="@{${baseUrl}(keyword=${currentKeyword}, sort='rating')}" th:selected="${currentSort == 'rating'}">⭐ Đánh giá cao</option>
+                    </select>
+                    <i class="fas fa-chevron-down" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #a4b0be; font-size: 0.8rem;"></i>
+                </div>
             </div>
-        </div>
+
+            <div class="comic-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px;">
+                
+                <div class="comic-card" th:each="comic : ${latestComics}" 
+                     style="background: white; border-radius: 10px; padding: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); transition: 0.3s; position: relative;">
+                    
+                    <a th:href="@{'/truyen/' + ${comic.slug}}" style="text-decoration: none; color: inherit;">
+                        <div style="position: relative; overflow: hidden; border-radius: 8px; aspect-ratio: 2/3;">
+                            
+                            <span class="status-badge" 
+                                  th:classappend="${comic.status.name() == 'COMPLETED' ? 'st-completed' : (comic.status.name() == 'DROPPED' ? 'st-dropped' : 'st-ongoing')}"
+                                  th:text="${comic.status}">
+                            </span>
+
+                            <img th:src="${comic.coverImage}" alt="Cover" 
+                                 style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s;"
+                                 onmouseover="this.style.transform='scale(1.05)'" 
+                                 onmouseout="this.style.transform='scale(1)'">
+                        </div>
+                        
+                        <h4 th:text="${comic.title}" class="card-title" 
+                            style="margin: 10px 0 5px 0; font-size: 1rem; color: #2f3542; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            Tên truyện
+                        </h4>
+                    </a>
+
+                    <div class="card-meta" style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #747d8c;">
+                        <span><i class="fas fa-eye"></i> <span th:text="${comic.viewCount}">0</span></span>
+                        
+                        <a th:href="@{'/truyen/' + ${comic.slug} + '/chap-' + ${comic.latestChapterNum}}"
+                           style="color: #ff4757; font-weight: bold; text-decoration: none; background: #ffeaa7; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem;">
+                           Ch. <span th:text="${comic.latestChapterNum}">0</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div th:if="${latestComics == null or latestComics.isEmpty()}" style="grid-column: 1/-1; text-align: center; padding: 50px;">
+                    <img src="https://cdni.iconscout.com/illustration/premium/thumb/empty-state-2130362-1800926.png" alt="Empty" style="height: 150px; opacity: 0.5;">
+                    <p style="color: #a4b0be;">Không tìm thấy truyện nào phù hợp.</p>
+                </div>
+            </div>
+        </main>
     </div>
-</header>
 
-<main>
-    <section class="comic-section">
-        <h2>📚 Truyện mới cập nhật</h2>
-        <div class="comic-grid">
-            <div class="comic-card">
-                <img src="https://placehold.co/150x200?text=Bìa+Truyện" alt="Comic 1">
-                <p>Truyện A</p>
-            </div>
-            <div class="comic-card">
-                <img src="https://placehold.co/150x200?text=Bìa+Truyện" alt="Comic 2">
-                <p>Truyện B</p>
-            </div>
-            <div class="comic-card">
-                <img src="https://placehold.co/150x200?text=Bìa+Truyện" alt="Comic 3">
-                <p>Truyện C</p>
-            </div>
-        </div>
-    </section>
-</main>
-
-<footer>
-    <p>© 2025 ComicVerse. All rights reserved.</p>
-</footer>
+    <div th:replace="~{fragments/layout :: footer}"></div>
+    <script th:replace="~{fragments/layout :: search-script}"></script>
 </body>
 </html>

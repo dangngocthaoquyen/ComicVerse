@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="'Đọc ' + ${comic.title} + ' - Chap ' + ${chapter.chapterNumber}">Đọc truyện</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root { --primary: #ff4757; --dark-bg: #1e272e; --dark-panel: #2f3542; --text-light: #ced6e0; }
+        body { font-family: 'Nunito', sans-serif; background-color: #000; color: var(--text-light); margin: 0; padding-bottom: 50px; }
+        a { text-decoration: none; color: inherit; transition: 0.3s; }
+        
+        /* HEADER */
+        .top-bar { background: var(--dark-bg); padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid #333; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+        .header-left, .header-right { flex: 1; display: flex; align-items: center; }
+        .header-right { justify-content: flex-end; }
+        .header-center { flex: 2; display: flex; justify-content: center; gap: 10px; }
+        .breadcrumb { font-size: 0.9rem; color: #a4b0be; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .breadcrumb a:hover { color: var(--primary); }
+        
+        .btn-nav { background: var(--dark-panel); color: white; padding: 8px 15px; border-radius: 5px; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 5px; border: 1px solid #57606f; cursor: pointer; }
+        .btn-nav:hover { background: var(--primary); border-color: var(--primary); }
+        .btn-nav.disabled { opacity: 0.5; pointer-events: none; cursor: default; }
+
+        /* CONTENT TRUYỆN */
+        .comic-content { max-width: 800px; margin: 20px auto; min-height: 60vh; text-align: center; }
+        .comic-page { width: 100%; display: block; margin: 0 auto; }
+
+        /* COMMENT SECTION */
+        .interaction-section { max-width: 900px; margin: 40px auto; background: var(--dark-bg); border-radius: 10px; padding: 20px; }
+        .tabs { display: flex; border-bottom: 2px solid #57606f; margin-bottom: 20px; }
+        .tab-btn { background: none; border: none; color: #a4b0be; padding: 10px 20px; font-size: 1.1rem; font-weight: bold; cursor: pointer; border-bottom: 3px solid transparent; transition: 0.3s; }
+        .tab-btn:hover { color: white; }
+        .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.5s; }
+
+        /* COMMENT ITEMS & FLAT REPLY STYLE */
+        .root-comment-wrapper { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #333; }
+        .comment-item { display: flex; gap: 15px; margin-top: 10px; }
+        .user-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #57606f; flex-shrink: 0; }
+        .comment-content { flex: 1; }
+        .username { color: #ff6b81; font-weight: bold; font-size: 0.95rem; }
+        .time-text { font-size: 0.75rem; color: gray; margin-left: 5px; }
+        .comment-text { color: #dfe4ea; line-height: 1.4; font-size: 0.95rem; margin-top: 2px; }
+        .reply-tag { color: #7bed9f; font-weight: bold; margin-right: 5px; text-decoration: none; font-size: 0.9rem;}
+        
+        .action-bar { margin-top: 5px; display: flex; gap: 15px; }
+        .btn-reply { background: none; border: none; color: #a4b0be; cursor: pointer; font-size: 0.8rem; font-weight: 600; padding: 0; }
+        .btn-reply:hover { color: var(--primary); }
+
+        /* REPLIES CONTAINER (QUAN TRỌNG: Cấu trúc phẳng) */
+        .replies-container { margin-left: 55px; margin-top: 10px; border-left: 2px solid #333; padding-left: 10px; }
+        /* Reset margin cho cấp cháu chắt để thẳng hàng */
+        .replies-container .replies-container { margin-left: 0 !important; border-left: none !important; padding-left: 0 !important; margin-top: 0; }
+
+        .reply-form { display: none; margin-top: 10px; animation: fadeIn 0.3s; }
+        .replies-container .reply-form { margin-left: 0; } 
+        
+        .reply-input { width: 100%; padding: 8px; border-radius: 20px; border: 1px solid #444; background: #1e272e; color: white; box-sizing: border-box;}
+        
+        .hidden-replies { display: none; }
+        .toggle-replies-btn { background: none; border: none; color: #a4b0be; font-size: 0.85rem; font-weight: bold; cursor: pointer; margin-top: 5px; display: flex; align-items: center; gap: 5px; }
+        .toggle-replies-btn:hover { color: white; }
+
+        .btn-load-more { background: #2f3542; color: #a4b0be; border: 1px dashed #57606f; width: 100%; padding: 10px; cursor: pointer; margin-top: 20px; border-radius: 5px;}
+        .btn-load-more:hover { color: white; border-color: white; background: var(--primary); }
+        
+        .comment-box textarea { width: 100%; padding: 15px; border-radius: 8px; border: 1px solid #57606f; background: var(--dark-panel); color: white; resize: vertical; box-sizing: border-box; }
+        .btn-submit { background: var(--primary); color: white; border: none; padding: 8px 20px; border-radius: 5px; margin-top: 10px; cursor: pointer; float: right; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <div class="header-left">
+            <div class="breadcrumb">
+                <a th:href="@{/home}"><i class="fas fa-home"></i></a> / 
+                <a th:href="@{'/truyen/' + ${comic.slug}}" th:text="${comic.title}">Truyện</a> / 
+                <span th:text="'Chap ' + ${chapter.chapterNumber}"></span>
+            </div>
+        </div>
+        <div class="header-center">
+            <a th:classappend="${prevChapNum == null} ? 'disabled'" th:href="@{'/truyen/' + ${comic.slug} + '/chap-' + ${prevChapNum}}" class="btn-nav"><i class="fas fa-arrow-left"></i></a>
+            <a th:href="@{'/truyen/' + ${comic.slug}}" class="btn-nav"><i class="fas fa-list"></i></a>
+            <a th:classappend="${nextChapNum == null} ? 'disabled'" th:href="@{'/truyen/' + ${comic.slug} + '/chap-' + ${nextChapNum}}" class="btn-nav"><i class="fas fa-arrow-right"></i></a>
+        </div>
+        
+        <div class="header-right">
+            <a th:if="${session.user == null}" 
+               th:href="@{/login(redirect=${currentUrl})}" 
+               class="btn-nav btn-follow">
+               <i class="fas fa-plus"></i> <span style="display:none; @media(min-width:768px){display:inline;}"> Theo dõi</span>
+            </a>
+
+            <form th:if="${session.user != null}" th:action="@{'/follow/' + ${comic.id}}" method="post">
+                <button type="submit" class="btn-nav"
+                    th:style="${isFollowing} ? 'background:#57606f;' : 'background:#2ed573;'">
+                    <i th:class="${isFollowing} ? 'fas fa-check' : 'fas fa-plus'"></i>
+                    <span th:text="${isFollowing} ? ' Đã theo dõi' : ' Theo dõi'"></span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="comic-content">
+        <div th:each="imgUrl : ${images}">
+            <img th:src="${imgUrl}" class="comic-page" loading="lazy" alt="Trang truyện">
+        </div>
+        <div th:if="${images == null or images.isEmpty()}" style="padding: 50px; color: gray;">
+            <i class="fas fa-image" style="font-size: 3rem;"></i>
+            <p>Chương này chưa có nội dung ảnh.</p>
+        </div>
+    </div>
+
+    <div class="chapter-controls" style="display: flex; justify-content: center; gap: 10px; margin-bottom: 30px;">
+        <a th:classappend="${prevChapNum == null} ? 'disabled'" th:href="@{'/truyen/' + ${comic.slug} + '/chap-' + ${prevChapNum}}" class="btn-nav">Chap Trước</a>
+        <a th:classappend="${nextChapNum == null} ? 'disabled'" th:href="@{'/truyen/' + ${comic.slug} + '/chap-' + ${nextChapNum}}" class="btn-nav" style="background: var(--primary); border-color: var(--primary);">Chap Sau</a>
+    </div>
+
+    <div class="interaction-section">
+        <div class="tabs">
+            <button class="tab-btn active" onclick="openTab(event, 'comments')">
+                <i class="fas fa-comments"></i> Bình luận (<span th:text="${totalComments}">0</span>)
+            </button>
+            <button class="tab-btn" onclick="openTab(event, 'reviews')">
+                <i class="fas fa-star"></i> Review đánh giá
+            </button>
+        </div>
+
+        <div id="comments" class="tab-content active">
+            <div th:if="${session.user != null}" class="comment-box">
+                <form action="/comment/add" method="post">
+                    <input type="hidden" name="chapterId" th:value="${chapter.id}">
+                    <textarea name="content" rows="3" placeholder="Bạn nghĩ gì về chương này? Hãy bình luận văn minh nhé..." required></textarea>
+                    <button type="submit" class="btn-submit">Gửi bình luận</button>
+                    <div style="clear: both;"></div>
+                </form>
+            </div>
+            
+            <div th:if="${session.user == null}" style="text-align: center; padding: 20px; background: #2f3542; border-radius: 5px; margin-bottom: 20px;">
+                <a th:href="@{/login(redirect=${currentUrl})}" style="color: var(--primary); font-weight: bold;">Đăng nhập</a> để tham gia bình luận.
+            </div>
+
+            <div id="comment-container" style="margin-top: 30px;">
+                <th:block th:each="rootCmt : ${comments}">
+                    <th:block th:if="${rootCmt != null}">
+                        
+                        <div class="root-comment-wrapper" th:id="'comment-' + ${rootCmt.id}">
+                            
+                            <div class="comment-item">
+                                <img th:src="${rootCmt.user.avatar != null ? rootCmt.user.avatar : '/images/default-avatar.png'}" class="user-avatar">
+                                <div class="comment-content">
+                                    <div>
+                                        <span class="username" th:text="${rootCmt.user.username}">Username</span>
+                                        <span class="time-text" th:text="${@dateFormatter.format(rootCmt.createdAt)}">Time</span>
+                                    </div>
+                                    <div class="comment-text" th:text="${rootCmt.content}">Content</div>
+                                    <div class="action-bar">
+                                        <button class="btn-reply" th:onclick="toggleReplyForm([[${rootCmt.id}]])" th:if="${session.user != null}">Trả lời</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div th:id="'reply-form-' + ${rootCmt.id}" class="reply-form" th:if="${session.user != null}">
+                                <form action="/comment/add" method="post" style="display:flex; gap:10px;">
+                                    <input type="hidden" name="chapterId" th:value="${chapter.id}">
+                                    <input type="hidden" name="parentId" th:value="${rootCmt.id}">
+                                    <input type="text" name="content" class="reply-input" th:placeholder="'Trả lời ' + ${rootCmt.user.username} + '...'" required>
+                                    <button type="submit" style="background:none; border:none; color:var(--primary); cursor:pointer;"><i class="fas fa-paper-plane"></i></button>
+                                </form>
+                            </div>
+
+                            <div th:if="${rootCmt.replies != null and !rootCmt.replies.isEmpty()}" class="replies-container">
+                                <th:block th:each="reply, stat : ${rootCmt.replies}">
+                                    <th:block th:if="${reply != null and stat.index < 3}">
+                                        <div th:replace="~{:: replyItemFragment(${reply})}"></div>
+                                    </th:block>
+                                </th:block>
+
+                                <div th:if="${rootCmt.replies.size() > 3}" th:id="'hidden-replies-root-' + ${rootCmt.id}" class="hidden-replies">
+                                    <th:block th:each="reply, stat : ${rootCmt.replies}">
+                                        <th:block th:if="${reply != null and stat.index >= 3}">
+                                            <div th:replace="~{:: replyItemFragment(${reply})}"></div>
+                                        </th:block>
+                                    </th:block>
+                                </div>
+
+                                <button th:if="${rootCmt.replies.size() > 3}" class="toggle-replies-btn" 
+                                        th:onclick="'toggleHiddenDiv(\'hidden-replies-root-' + ${rootCmt.id} + '\', this)'">
+                                    <i class="fas fa-caret-down"></i> Xem thêm <span th:text="${rootCmt.replies.size() - 3}"></span> câu trả lời
+                                </button>
+                            </div>
+                        </div>
+                    </th:block>
+                </th:block>
+            </div>
+
+            <div id="load-more-btn-container" style="text-align: center; margin-top: 20px;" th:if="${totalPages > 1}">
+                <button onclick="loadMoreComments()" class="btn-load-more">
+                    Xem thêm bình luận cũ hơn...
+                </button>
+            </div>
+        </div>
+
+        <div id="reviews" class="tab-content">
+            <p style="text-align: center; color: gray;">Chức năng Review đang phát triển...</p>
+        </div>
+    </div>
+
+    <th:block th:fragment="replyItemFragment(cmt)">
+        <th:block th:if="${cmt != null}">
+            <div class="comment-item" th:id="'comment-' + ${cmt.id}">
+                <img th:src="${cmt.user.avatar != null ? cmt.user.avatar : '/images/default-avatar.png'}" class="user-avatar" style="width: 32px; height: 32px;">
+                <div class="comment-content">
+                    <div>
+                        <span class="username" th:text="${cmt.user.username}">User</span>
+                        <span class="time-text" th:text="${@dateFormatter.format(cmt.createdAt)}">Time</span>
+                    </div>
+                    <div class="comment-text">
+                        <span th:if="${cmt.parentComment != null}" class="reply-tag">@<span th:text="${cmt.parentComment.user.username}">Parent</span></span>
+                        <span th:text="${cmt.content}">Content</span>
+                    </div>
+                    <div class="action-bar">
+                        <button class="btn-reply" th:onclick="toggleReplyForm([[${cmt.id}]])" th:if="${session.user != null}">Trả lời</button>
+                    </div>
+
+                    <div th:id="'reply-form-' + ${cmt.id}" class="reply-form" style="margin-left: 0;" th:if="${session.user != null}">
+                        <form action="/comment/add" method="post" style="display:flex; gap:10px;">
+                            <input type="hidden" name="chapterId" th:value="${chapter.id}">
+                            <input type="hidden" name="parentId" th:value="${cmt.id}">
+                            <input type="text" name="content" class="reply-input" th:placeholder="'Trả lời ' + ${cmt.user.username} + '...'" required>
+                            <button type="submit" style="background:none; border:none; color:var(--primary); cursor:pointer;"><i class="fas fa-paper-plane"></i></button>
+                        </form>
+                    </div>
+
+                    <div th:if="${cmt.replies != null and !cmt.replies.isEmpty()}" style="margin-top: 5px;">
+                        <button class="toggle-replies-btn" style="font-size: 0.8rem;" th:onclick="'toggleHiddenDiv(\'hidden-grandchild-' + ${cmt.id} + '\', this, true)'">
+                            <i class="fas fa-reply"></i> Xem <span th:text="${cmt.replies.size()}"></span> câu trả lời
+                        </button>
+                        <div th:id="'hidden-grandchild-' + ${cmt.id}" class="replies-container hidden-replies">
+                             <th:block th:each="grandChild : ${cmt.replies}">
+                                 <th:block th:if="${grandChild != null}">
+                                     <div th:replace="~{:: replyItemFragment(${grandChild})}"></div>
+                                 </th:block>
+                             </th:block>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </th:block>
+    </th:block>
+
+    <script th:inline="javascript">
+        // --- 1. Xử lý Tab ---
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) { tabcontent[i].style.display = "none"; tabcontent[i].classList.remove("active"); }
+            tablinks = document.getElementsByClassName("tab-btn");
+            for (i = 0; i < tablinks.length; i++) { tablinks[i].className = tablinks[i].className.replace(" active", ""); }
+            document.getElementById(tabName).style.display = "block";
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.className += " active";
+        }
+
+        // --- 2. Ẩn/Hiện Form Reply ---
+        function toggleReplyForm(id) {
+            document.querySelectorAll('.reply-form').forEach(el => el.style.display = 'none');
+            var form = document.getElementById('reply-form-' + id);
+            if (form) {
+                form.style.display = (form.style.display === 'block') ? 'none' : 'block';
+                var input = form.querySelector('input');
+                if(input) input.focus();
+            }
+        }
+
+        // --- 3. Ẩn/Hiện Danh sách Reply ---
+        function toggleHiddenDiv(divId, btn, isGrandchild = false) {
+            var div = document.getElementById(divId);
+            if (div.style.display === 'block') {
+                div.style.display = 'none';
+                btn.innerHTML = isGrandchild 
+                    ? `<i class="fas fa-reply"></i> Xem câu trả lời` 
+                    : `<i class="fas fa-caret-down"></i> Xem thêm câu trả lời`;
+            } else {
+                div.style.display = 'block';
+                btn.innerHTML = `<i class="fas fa-caret-up"></i> Thu gọn`;
+            }
+        }
+
+        // --- 4. Load More (AJAX) ---
+        /*<![CDATA[*/
+        let currentPage = 0;
+        const chapterId = /*[[${chapter.id}]]*/ 0;
+        const totalPages = /*[[${totalPages}]]*/ 0; 
+        /*]]>*/
+
+        function loadMoreComments() {
+            currentPage++;
+            fetch(`/comment/load-more?chapterId=${chapterId}&page=${currentPage}`)
+                .then(response => {
+                    if (!response.ok) throw new Error("Lỗi tải bình luận");
+                    return response.text();
+                })
+                .then(html => {
+                    const container = document.getElementById('comment-container');
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = html;
+                    while (tempDiv.firstChild) {
+                        container.appendChild(tempDiv.firstChild);
+                    }
+                    if (currentPage >= totalPages - 1) {
+                        document.getElementById('load-more-btn-container').style.display = 'none';
+                    }
+                })
+                .catch(err => console.error(err));
+        }
+    </script>
+
+</body>
+</html>

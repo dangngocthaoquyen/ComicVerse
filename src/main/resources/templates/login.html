@@ -1,30 +1,160 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
-  <meta charset="UTF-8">
-  <title>Đăng nhập</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập - ComicVerse</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary: #ff4757;
+            --dark: #2f3542;
+            --light: #f1f2f6;
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .login-card {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .login-card h2 {
+            margin-top: 0;
+            color: var(--dark);
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+        }
+
+        .brand-logo {
+            color: var(--primary);
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+
+        /* Input styling */
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #dfe4ea;
+            border-radius: 8px;
+            font-size: 1rem;
+            box-sizing: border-box; /* Đảm bảo padding không làm vỡ layout */
+            transition: 0.3s;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(255, 71, 87, 0.1);
+        }
+
+        /* Button styling */
+        button {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background: #e04050;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 71, 87, 0.3);
+        }
+
+        /* Error message */
+        .error-message {
+            background: #ffeaa7;
+            color: #d63031;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            border: 1px solid #fdcb6e;
+        }
+
+        /* Links */
+        .links {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: #747d8c;
+        }
+
+        .links a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .links a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
 
-<h2>Đăng nhập</h2>
+    <div class="login-card">
+        <div class="brand-logo">
+            <i class="fas fa-book-open"></i>
+        </div>
+        <h2>Đăng nhập</h2>
 
-<!-- Lỗi custom (ví dụ: tài khoản bị khóa) -->
-<p th:if="${loginError}" style="color:red" th:text="${loginError}"></p>
+        <div th:if="${loginError}" class="error-message">
+            <i class="fas fa-exclamation-circle"></i> <span th:text="${loginError}"></span>
+        </div>
 
-<!-- fallback lỗi sai email/mật khẩu từ Spring Security -->
-<p th:if="${param.error} and ${loginError} == null" style="color:red">
-  Sai email hoặc mật khẩu!
-</p>
+        <div th:if="${param.error} and ${loginError} == null" class="error-message">
+            <i class="fas fa-exclamation-circle"></i> Email hoặc mật khẩu không đúng!
+        </div>
 
-<form th:action="@{/login}" method="post">
-  <input type="email" name="email" placeholder="Email" required>
-  <br><br>
+        <form th:action="@{/login}" method="post">
+            
+            <input type="hidden" name="redirect" th:value="${param.redirect}">
 
-  <input type="password" name="password" placeholder="Mật khẩu" required>
-  <br><br>
+            <div class="form-group">
+                <input type="email" name="email" placeholder="Nhập địa chỉ Email" required autofocus>
+            </div>
 
-  <button type="submit">Đăng nhập</button>
-</form>
+            <div class="form-group">
+                <input type="password" name="password" placeholder="Nhập mật khẩu" required>
+            </div>
+
+            <button type="submit">Đăng nhập ngay</button>
+        </form>
+
+        <div class="links">
+            <p>Chưa có tài khoản? <a th:href="@{/register}">Đăng ký ngay</a></p>
+            <p><a th:href="@{/forgot-password}">Quên mật khẩu?</a></p>
+            <p style="margin-top: 10px;"><a th:href="@{/home}">← Về trang chủ</a></p>
+        </div>
+    </div>
 
 </body>
 </html>

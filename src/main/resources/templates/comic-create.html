@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Đăng truyện mới - ComicVerse</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Nunito', sans-serif; background: #f4f6f9; display: flex; justify-content: center; padding: 40px 0; margin: 0; min-height: 100vh; }
+        
+        .container { background: white; width: 100%; max-width: 900px; padding: 40px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); display: flex; gap: 40px; }
+        
+        /* Cột bên trái: Form */
+        .form-section { flex: 1.5; }
+        /* Cột bên phải: Preview Ảnh */
+        .image-section { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-left: 2px dashed #f1f2f6; padding-left: 40px; }
+
+        h2 { color: #2f3542; margin-top: 0; }
+        .form-group { margin-bottom: 20px; }
+        .form-label { font-weight: bold; color: #57606f; display: block; margin-bottom: 8px; }
+        .form-control { width: 100%; padding: 12px; border: 1px solid #dfe4ea; border-radius: 8px; font-size: 1rem; box-sizing: border-box; }
+        .form-control:focus { outline: none; border-color: #ff4757; box-shadow: 0 0 0 3px rgba(255, 71, 87, 0.1); }
+        
+        textarea.form-control { resize: vertical; min-height: 120px; }
+
+        .btn-submit { width: 100%; padding: 14px; background: #ff4757; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1.1rem; cursor: pointer; transition: 0.3s; }
+        .btn-submit:hover { background: #e04050; transform: translateY(-2px); }
+
+        /* Vùng Upload Ảnh */
+        .cover-preview-box {
+            width: 100%;
+            aspect-ratio: 2/3; /* Tỉ lệ chuẩn 2:3 */
+            background: #f1f2f6;
+            border-radius: 10px;
+            overflow: hidden;
+            display: flex; align-items: center; justify-content: center;
+            border: 2px dashed #cbd5e0;
+            position: relative;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .cover-preview-box:hover { border-color: #ff4757; background: #fff0f1; }
+        
+        .preview-img { width: 100%; height: 100%; object-fit: cover; display: none; }
+        .upload-placeholder { text-align: center; color: #a4b0be; }
+        .upload-placeholder i { font-size: 3rem; margin-bottom: 10px; }
+
+        /* CHECKBOX CATEGORY */
+        .category-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
+        .cat-item input { display: none; }
+        .cat-item label { 
+            display: block; padding: 8px; text-align: center; background: #f1f2f6; 
+            border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: 600; color: #747d8c; transition: 0.2s; 
+        }
+        .cat-item input:checked + label { background: #ff4757; color: white; box-shadow: 0 4px 10px rgba(255, 71, 87, 0.3); }
+
+        /* ================= MODAL CROP ẢNH ================= */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 9999;
+            display: none; justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background: white; padding: 20px; border-radius: 10px;
+            width: 90%; max-width: 600px; text-align: center;
+        }
+        .crop-container {
+            height: 400px; width: 100%; background: #333; margin-bottom: 20px;
+        }
+        .crop-container img { max-width: 100%; } /* Bắt buộc cho CropperJS */
+        
+        .modal-buttons { display: flex; gap: 10px; justify-content: center; }
+        .btn-modal { padding: 10px 25px; border-radius: 5px; border: none; font-weight: bold; cursor: pointer; }
+        .btn-cancel { background: #dfe4ea; color: #2f3542; }
+        .btn-crop { background: #ff4757; color: white; }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    
+    <div class="form-section">
+        <h2 th:text="${comic != null ? 'Chỉnh sửa truyện' : 'Đăng truyện mới'}"></h2>
+        
+        <form id="comicForm" 
+              th:action="${comic != null} ? @{'/comic/update/' + ${comic.id}} : @{/comic/create}" 
+              method="post" enctype="multipart/form-data">
+            
+            <div class="form-group">
+                <label class="form-label">Tên truyện (*)</label>
+                <input type="text" name="title" class="form-control" placeholder="Nhập tên truyện..." required 
+                       th:value="${comic != null ? comic.title : ''}">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Tác giả</label>
+                <input type="text" name="author" class="form-control" placeholder="Tên tác giả..." required
+                       th:value="${comic != null ? comic.author : ''}">
+            </div>
+
+            <div class="form-group" th:if="${comic != null}">
+                <label class="form-label">Trạng thái truyện</label>
+                <select name="status" class="form-control">
+                    <option value="ONGOING" th:selected="${comic.status.name() == 'ONGOING'}">Đang tiến hành (Ongoing)</option>
+                    <option value="COMPLETED" th:selected="${comic.status.name() == 'COMPLETED'}">Đã hoàn thành (Completed)</option>
+                    <option value="DROPPED" th:selected="${comic.status.name() == 'DROPPED'}">Tạm ngưng (Dropped)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Mô tả nội dung</label>
+                <textarea name="description" class="form-control" placeholder="Tóm tắt nội dung truyện..." required 
+                          th:text="${comic != null ? comic.description : ''}"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Thể loại</label>
+                <div class="category-grid">
+                    <div th:each="cat : ${categories}" class="cat-item">
+                        <input type="checkbox" name="categoryIds" th:value="${cat.id}" th:id="'cat-' + ${cat.id}"
+                               th:checked="${selectedCatIds != null && selectedCatIds.contains(cat.id)}">
+                        <label th:for="'cat-' + ${cat.id}" th:text="${cat.name}"></label>
+                    </div>
+                </div>
+            </div>
+
+            <input type="file" id="coverInput" name="cover" accept="image/*" style="display: none;">
+
+            <div style="margin-top: 30px;">
+                <button type="submit" class="btn-submit">
+                    <i class="fas fa-check-circle"></i> <span th:text="${comic != null ? 'Cập Nhật Truyện' : 'Đăng Truyện Ngay'}"></span>
+                </button>
+                <a th:href="@{/comic/manage}" style="display: block; text-align: center; margin-top: 15px; color: #747d8c; text-decoration: none;">Quay lại</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="image-section">
+        <label class="form-label">Ảnh bìa (Tỉ lệ 2:3)</label>
+        
+        <div class="cover-preview-box" onclick="document.getElementById('coverInput').click()">
+            <div class="upload-placeholder" id="placeholder">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <p>Nhấn để tải ảnh</p>
+                <p style="font-size: 0.8rem;">(Sẽ có công cụ cắt ảnh)</p>
+            </div>
+            <img id="finalPreview" class="preview-img" 
+                 th:src="${comic != null ? comic.coverImage : ''}" 
+                 th:style="${comic != null ? 'display:block;' : ''}">
+        </div>
+        
+        <p style="font-size: 0.85rem; color: #a4b0be; margin-top: 10px; text-align: center;">
+            Ảnh đẹp nhất ở kích thước dọc.<br>Hệ thống sẽ hỗ trợ bạn cắt ảnh.
+        </p>
+    </div>
+
+</div>
+
+<div id="cropModal" class="modal-overlay">
+    <div class="modal-content">
+        <h3>Căn chỉnh ảnh bìa</h3>
+        <p style="color: gray; font-size: 0.9rem;">Kéo vùng chọn để lấy phần ảnh ưng ý nhất (Tỉ lệ 2:3)</p>
+        
+        <div class="crop-container">
+            <img id="imageToCrop" src="">
+        </div>
+
+        <div class="modal-buttons">
+            <button type="button" class="btn-modal btn-cancel" onclick="closeModal()">Hủy</button>
+            <button type="button" class="btn-modal btn-crop" onclick="cropAndSave()">✂️ Cắt & Chọn</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
+<script>
+    let cropper;
+    const coverInput = document.getElementById('coverInput');
+    const modal = document.getElementById('cropModal');
+    const imageToCrop = document.getElementById('imageToCrop');
+    const finalPreview = document.getElementById('finalPreview');
+    const placeholder = document.getElementById('placeholder');
+
+    // 1. Khi người dùng chọn file
+    coverInput.addEventListener('change', function(e) {
+        const files = e.target.files;
+        if (files && files.length > 0) {
+            const file = files[0];
+            const reader = new FileReader();
+            
+            reader.onload = function(event) {
+                // Mở Modal
+                imageToCrop.src = event.target.result;
+                modal.style.display = 'flex';
+
+                // Hủy cropper cũ nếu có để tránh lỗi
+                if (cropper) {
+                    cropper.destroy();
+                }
+
+                // Khởi tạo CropperJS
+                cropper = new Cropper(imageToCrop, {
+                    aspectRatio: 2 / 3, // 🔥 Tỉ lệ vàng 2:3 (Dọc)
+                    viewMode: 1, // Giới hạn khung crop trong ảnh
+                    autoCropArea: 1,
+                });
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // 2. Nút "Cắt & Chọn"
+    function cropAndSave() {
+        if (cropper) {
+            // Lấy ảnh đã cắt dưới dạng Canvas
+            const canvas = cropper.getCroppedCanvas({
+                width: 600, // Resize ảnh cho nhẹ (optional)
+                height: 900
+            });
+
+            // Chuyển Canvas thành File Blob để gửi đi
+            canvas.toBlob(function(blob) {
+                // Tạo File mới từ Blob
+                const croppedFile = new File([blob], "cover-cropped.png", { type: "image/png" });
+
+                // Gán File mới vào input (thay thế file gốc)
+                // Kỹ thuật này dùng DataTransfer để giả lập việc người dùng chọn file
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(croppedFile);
+                coverInput.files = dataTransfer.files;
+
+                // Hiển thị ảnh đã cắt ra ngoài
+                finalPreview.src = URL.createObjectURL(blob);
+                finalPreview.style.display = 'block';
+                placeholder.style.display = 'none';
+
+                // Đóng Modal
+                closeModal();
+            }, 'image/png');
+        }
+    }
+
+    // 3. Đóng Modal
+    function closeModal() {
+        modal.style.display = 'none';
+        if (cropper) {
+            cropper.destroy();
+            cropper = null;
+        }
+        // Nếu user hủy mà chưa có ảnh preview thì reset input để có thể chọn lại file đó
+        if (finalPreview.style.display === 'none') {
+            coverInput.value = '';
+        }
+    }
+</script>
+
+</body>
+</html>

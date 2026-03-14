@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${comic.title} + ' - ComicVerse'">Chi tiết truyện</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Nunito', sans-serif; background-color: #f4f6f9; margin: 0; }
+        .container { max-width: 1000px; margin: 30px auto; padding: 0 15px; }
+
+        /* CARD INFO */
+        .comic-info-card { background: white; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; gap: 30px; padding: 30px; margin-bottom: 30px; }
+        .cover-img { width: 220px; height: 330px; object-fit: cover; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); flex-shrink: 0; }
+        .info-content { flex: 1; }
+        .comic-title { font-size: 2rem; color: #2f3542; margin: 0 0 10px 0; }
+        .comic-meta { color: #57606f; margin-bottom: 5px; font-size: 1rem; }
+        .comic-meta i { width: 25px; color: #a4b0be; }
+
+        /* STATS & BUTTONS */
+        .stats-row { display: flex; gap: 20px; margin: 20px 0; background: #f1f2f6; padding: 15px; border-radius: 8px; }
+        .stat-item { text-align: center; flex: 1; border-right: 1px solid #dcdde1; }
+        .stat-item:last-child { border-right: none; }
+        .stat-num { font-weight: bold; font-size: 1.2rem; color: #2f3542; }
+        .stat-label { font-size: 0.9rem; color: #747d8c; }
+
+        .action-buttons { display: flex; gap: 15px; margin-top: 20px; }
+        .btn { padding: 10px 20px; border-radius: 25px; text-decoration: none; font-weight: bold; transition: 0.3s; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; border: none; font-size: 1rem; }
+        .btn-read { background: #ff4757; color: white; }
+        .btn-read:hover { background: #e84118; transform: translateY(-2px); }
+        .btn-follow { background: #2ed573; color: white; }
+        .btn-unfollow { background: #dfe4ea; color: #57606f; }
+
+        /* CHAPTER LIST */
+        .chapter-list-container { background: white; padding: 30px; border-radius: 15px; margin-bottom: 30px; }
+        .section-title { font-size: 1.3rem; border-bottom: 2px solid #ff4757; display: inline-block; margin-bottom: 20px; padding-bottom: 5px; color: #2f3542; }
+        .chapter-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; max-height: 400px; overflow-y: auto; }
+        .chapter-item { display: block; padding: 12px; border: 1px solid #f1f2f6; border-radius: 8px; text-decoration: none; color: #2f3542; transition: 0.2s; display: flex; justify-content: space-between; align-items: center; }
+        .chapter-item:hover { background: #fff0f1; border-color: #ff4757; color: #ff4757; }
+        .chap-date { font-size: 0.8rem; color: #a4b0be; }
+
+        .tags { margin-top: 15px; }
+        .tag { display: inline-block; background: #dfe4ea; padding: 4px 10px; border-radius: 4px; font-size: 0.85rem; color: #57606f; margin-right: 5px; }
+
+        /* CSS BÌNH LUẬN */
+        .comment-item { display: flex; gap: 15px; margin-bottom: 15px; }
+        .user-avatar { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 1px solid #dfe4ea; flex-shrink: 0; }
+        .cmt-body { flex: 1; }
+        .cmt-header { margin-bottom: 4px; }
+        .cmt-user { font-weight: bold; color: #2f3542; font-size: 0.95rem; margin-right: 5px; }
+        .cmt-chap { font-size: 0.7rem; background: #2f3542; color: #fff; padding: 1px 6px; border-radius: 4px; vertical-align: middle; }
+        .cmt-time { font-size: 0.75rem; color: #a4b0be; margin-left: 5px; }
+        .cmt-text { color: #57606f; line-height: 1.4; font-size: 0.95rem; }
+        
+        /* Reply Styles */
+        .replies-container { margin-left: 55px; margin-top: 10px; border-left: 2px solid #f1f2f6; padding-left: 10px; }
+        
+        .toggle-reply-btn { background: none; border: none; color: #2ed573; font-size: 0.85rem; font-weight: bold; cursor: pointer; margin-top: 5px; }
+        .toggle-reply-btn:hover { text-decoration: underline; }
+        
+        .btn-load-more { width: 100%; background: #2f3542; color: white; border: 1px dashed #57606f; padding: 10px; margin-top: 20px; cursor: pointer; border-radius: 5px; font-weight: bold; }
+        .btn-load-more:hover { background: #ff4757; border-color: #ff4757; }
+        
+        .hidden-replies { display: none; }
+    </style>
+</head>
+<body>
+
+    <div style="background: white; padding: 15px; text-align: center; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); margin-bottom: 20px;">
+        <a href="/home" style="text-decoration: none; font-weight: bold; color: #ff4757; font-size: 1.5rem;">ComicVerse</a>
+    </div>
+
+    <div class="container">
+
+        <div class="comic-info-card">
+            <img th:src="${comic.coverImage}" class="cover-img" alt="Bìa truyện">
+            <div class="info-content">
+                <h1 class="comic-title" th:text="${comic.title}">Tên Truyện</h1>
+                <p class="comic-meta"><i class="fas fa-user-edit"></i> <span th:text="${comic.author}">Tác giả</span></p>
+                <p class="comic-meta"><i class="fas fa-signal"></i> <span th:text="${comic.status}">ONGOING</span></p>
+                <p class="comic-meta"><i class="fas fa-user"></i> Người đăng: <span th:text="${comic.uploader.username}">User</span></p>
+
+                <div class="stats-row">
+                    <div class="stat-item"><div class="stat-num"><i class="fas fa-eye"></i> <span th:text="${comic.viewCount}">0</span></div><div class="stat-label">Lượt xem</div></div>
+                    <div class="stat-item"><div class="stat-num"><i class="fas fa-heart"></i> <span th:text="${comic.followCount}">0</span></div><div class="stat-label">Theo dõi</div></div>
+                    <div class="stat-item"><div class="stat-num" style="color: #ffa502;"><span th:text="${comic.ratingAverage}">0.0</span> <i class="fas fa-star"></i></div><div class="stat-label">Đánh giá</div></div>
+                </div>
+
+                <div class="tags"><span th:each="cat : ${comic.categories}" class="tag" th:text="${cat.name}">Hành động</span></div>
+
+                <div class="action-buttons">
+                    <a th:if="${!chapters.isEmpty()}" th:href="@{'/truyen/' + ${comic.slug} + '/chap-' + ${chapters[chapters.size()-1].chapterNumber}}" class="btn btn-read"><i class="fas fa-book-open"></i> Đọc Từ Đầu</a>
+                    <button th:if="${chapters.isEmpty()}" class="btn btn-unfollow" disabled>Chưa có chương</button>
+                    
+                    <form th:action="@{'/follow/' + ${comic.id}}" method="post" style="display:inline;">
+                        <button type="submit" th:if="${!isFollowing}" class="btn btn-follow"><i class="fas fa-plus"></i> Theo Dõi</button>
+                        <button type="submit" th:if="${isFollowing}" class="btn btn-unfollow"><i class="fas fa-check"></i> Đang Theo Dõi</button>
+                    </form>
+                </div>
+
+                <div style="margin-top: 20px; color: #57606f; line-height: 1.6;">
+                    <h3><i class="fas fa-info-circle"></i> Nội dung</h3>
+                    <p th:text="${comic.description}">Mô tả truyện...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="chapter-list-container">
+            <h3 class="section-title"><i class="fas fa-list"></i> Danh sách chương</h3>
+            <div class="chapter-grid">
+                <a th:each="chap : ${chapters}" th:href="@{'/truyen/' + ${comic.slug} + '/chap-' + ${chap.chapterNumber}}" class="chapter-item">
+                    <div>
+                        <strong style="font-size: 1.05rem;">
+                            <span th:text="'Chương ' + ${chap.chapterNumber}">Chương 1</span>
+                            <span th:if="${chap.chapterName != null && chap.chapterName != ''}" th:text="': ' + ${chap.chapterName}"></span>
+                        </strong>
+                        <div style="font-size: 0.8rem; color: #747d8c; margin-top: 2px;"><i class="fas fa-eye"></i> <span th:text="${chap.viewCount}">0</span></div>
+                    </div>
+                    <span class="chap-date" th:text="${@dateFormatter.format(chap.createdAt)}">Vừa xong</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="chapter-list-container">
+            <h3 class="section-title"><i class="fas fa-comments"></i> Bình luận (<span th:text="${totalComments}">0</span>)</h3>
+            
+            <div id="comment-container">
+                <div th:replace="~{:: commentListFragment(${comments})}"></div>
+            </div>
+
+            <div id="load-more-btn-container" style="text-align: center; margin-top: 20px;" th:if="${totalPages > 1}">
+                <button onclick="loadMoreComments()" class="btn-load-more">Xem thêm bình luận cũ hơn...</button>
+            </div>
+            
+            <p th:if="${comments == null or comments.isEmpty()}" style="text-align:center; color:gray; padding:20px;">Chưa có bình luận nào.</p>
+        </div>
+
+    </div>
+
+    <th:block th:fragment="commentListFragment(commentList)">
+        <th:block th:each="rootCmt : ${commentList}">
+            <th:block th:if="${rootCmt != null}">
+                <div class="comment-wrapper" style="border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px;">
+                    
+                    <div th:replace="~{:: singleCommentItem(${rootCmt})}"></div>
+
+                    <div th:if="${rootCmt.replies != null and !rootCmt.replies.isEmpty()}" class="replies-container">
+                        
+                        <th:block th:each="reply, stat : ${rootCmt.replies}">
+                            
+                            <th:block th:if="${stat.index < 3}">
+                                <div th:replace="~{:: singleCommentItem(${reply})}"></div>
+                                </th:block>
+
+                            <th:block th:if="${stat.index == 3}">
+                                <div th:id="'hidden-replies-' + ${rootCmt.id}" class="hidden-replies">
+                            </th:block>
+
+                            <th:block th:if="${stat.index >= 3}">
+                                <div th:replace="~{:: singleCommentItem(${reply})}"></div>
+                                </th:block>
+
+                            <th:block th:if="${stat.last and stat.index >= 3}">
+                                </div> 
+                            </th:block>
+
+                        </th:block>
+
+                        <button th:if="${rootCmt.replies.size() > 3}" class="toggle-reply-btn" 
+                                th:onclick="'toggleHiddenDiv(\'hidden-replies-' + ${rootCmt.id} + '\', this)'">
+                            <i class="fas fa-share" style="transform: scaleY(-1);"></i> 
+                            Xem thêm <span th:text="${rootCmt.replies.size() - 3}"></span> câu trả lời
+                        </button>
+
+                    </div>
+                </div>
+            </th:block>
+        </th:block>
+    </th:block>
+
+    <div th:fragment="singleCommentItem(cmt)" class="comment-item" th:if="${cmt != null}">
+        <img th:src="${(cmt.user != null && cmt.user.avatar != null) ? cmt.user.avatar : '/images/default-avatar.png'}" 
+             class="user-avatar">
+        
+        <div class="cmt-body">
+            <div class="cmt-header">
+                <span class="cmt-user" th:text="${cmt.user != null ? cmt.user.username : 'Người dùng ẩn'}">Username</span>
+                <span class="cmt-chap" th:if="${cmt.chapter != null}" th:text="'Chap ' + ${cmt.chapter.chapterNumber}">Chap 1</span>
+                <span class="cmt-time" th:text="${@dateFormatter.format(cmt.createdAt)}">Time</span>
+            </div>
+            
+            <div class="cmt-text">
+                <span style="color:#2ed573; font-weight:bold; margin-right:5px;" 
+                      th:if="${cmt.parentComment != null}">
+                      @<span th:text="${(cmt.parentComment.user != null) ? cmt.parentComment.user.username : 'Người dùng ẩn'}">Tag</span>
+                </span>
+                <span th:text="${cmt.content}">Nội dung...</span>
+            </div>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        function toggleHiddenDiv(divId, btn) {
+            var div = document.getElementById(divId);
+            if (div.style.display === 'block') {
+                div.style.display = 'none';
+                btn.innerHTML = `<i class="fas fa-share" style="transform: scaleY(-1);"></i> Xem thêm câu trả lời`;
+            } else {
+                div.style.display = 'block';
+                btn.innerHTML = `<i class="fas fa-caret-up"></i> Thu gọn`;
+            }
+        }
+
+        /*<![CDATA[*/
+        let currentPage = 0;
+        const comicId = /*[[${comic.id}]]*/ 0;
+        const totalPages = /*[[${totalPages}]]*/ 0; 
+        /*]]>*/
+
+        function loadMoreComments() {
+            currentPage++;
+            fetch(`/comment/load-more?comicId=${comicId}&page=${currentPage}`)
+                .then(response => {
+                    if (response.status === 403 || response.redirected) {
+                        alert("Vui lòng đăng nhập để xem thêm bình luận!");
+                        throw new Error("Access Denied");
+                    }
+                    if (!response.ok) throw new Error("Lỗi tải bình luận");
+                    return response.text();
+                })
+                .then(html => {
+                    const container = document.getElementById('comment-container');
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = html;
+                    while (tempDiv.firstChild) {
+                        container.appendChild(tempDiv.firstChild);
+                    }
+                    if (currentPage >= totalPages - 1) {
+                        document.getElementById('load-more-btn-container').style.display = 'none';
+                    }
+                })
+                .catch(err => console.error(err));
+        }
+    </script>
+
+</body>
+</html>

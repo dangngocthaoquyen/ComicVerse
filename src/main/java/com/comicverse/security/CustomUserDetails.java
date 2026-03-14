@@ -22,8 +22,9 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // role trong DB: "ADMIN" / "USER"
-        return List.of(new SimpleGrantedAuthority(user.getRole()));
+        // hasAuthority("ADMIN") sẽ match với "ADMIN"
+        String authority = (user.getRole() == null) ? "USER" : user.getRole().name();
+        return List.of(new SimpleGrantedAuthority(authority));
     }
 
     @Override
@@ -46,15 +47,15 @@ public class CustomUserDetails implements UserDetails {
         return true;
     }
 
-    // ✅ LOCKED -> không cho login (Spring sẽ ném LockedException)
+    // ✅ LOCKED -> LockedException
     @Override
     public boolean isAccountNonLocked() {
-        String status = user.getStatus();
-        return status == null || !"LOCKED".equalsIgnoreCase(status);
+        User.Status status = user.getStatus();
+        if (status == null) return true; // dữ liệu cũ
+        return status != User.Status.LOCKED;
     }
 
-    // ✅ Enabled: bạn hiện chưa có DISABLED, nên cứ true
-    // (để LOCKED vẫn ra đúng LockedException)
+    // ✅ Vì bạn không có DISABLED nên giữ true để LOCKED ra đúng LockedException
     @Override
     public boolean isEnabled() {
         return true;
